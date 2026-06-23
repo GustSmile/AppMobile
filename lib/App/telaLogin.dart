@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'telaCadastro.dart';
+import 'package:flutter/services.dart';
 
 void main() {
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then((
+    _,
+  ) {
+    runApp(const MyApp());
+  });
 }
 
 class MyApp extends StatelessWidget {
@@ -34,23 +41,17 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE2E2E2), // Light gray background
+      backgroundColor: const Color.fromARGB(
+        255,
+        255,
+        255,
+        255,
+      ), // Light gray background
       body: Center(
         child: SingleChildScrollView(
           child: Container(
-            width: 380,
+            constraints: const BoxConstraints(maxWidth: 400),
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 15,
-                  offset: Offset(0, 5),
-                ),
-              ],
-            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -187,22 +188,32 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                RichText(
-                  textAlign: TextAlign.center,
-                  text: const TextSpan(
-                    text: "Não tem uma conta? ",
-                    style: TextStyle(color: Colors.black54, fontSize: 14),
-                    children: [
-                      TextSpan(
-                        text: "Registre-se",
-                        style: TextStyle(
-                          color: Color(
-                            0xFFB79A59,
-                          ), // Golden color matching logo
-                          fontWeight: FontWeight.bold,
-                        ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const TelaCadastro(),
                       ),
-                    ],
+                    );
+                  },
+                  child: RichText(
+                    textAlign: TextAlign.center,
+                    text: const TextSpan(
+                      text: "Não tem uma conta? ",
+                      style: TextStyle(color: Colors.black54, fontSize: 14),
+                      children: [
+                        TextSpan(
+                          text: "Registre-se",
+                          style: TextStyle(
+                            color: Color(
+                              0xFFB79A59,
+                            ), // Golden color matching logo
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class TelaCriarConta extends StatefulWidget {
-  const TelaCriarConta({super.key});
+class TelaCadastro extends StatefulWidget {
+  const TelaCadastro({super.key});
 
   @override
-  State<TelaCriarConta> createState() => _TelaCriarContaState();
+  State<TelaCadastro> createState() => _TelaCadastroState();
 }
 
-class _TelaCriarContaState extends State<TelaCriarConta> {
+class _TelaCadastroState extends State<TelaCadastro> {
   int _etapa = 1;
 
   String? _sexoSelecionado;
@@ -22,7 +22,7 @@ class _TelaCriarContaState extends State<TelaCriarConta> {
     'Viúvo',
     'Separado',
     'Divorciado',
-    'Segunda união'
+    'Segunda união',
   ];
 
   Widget _buildLabel(String text) {
@@ -67,9 +67,7 @@ class _TelaCriarContaState extends State<TelaCriarConta> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildLabel("Nome Completo"),
-        TextField(
-          decoration: _inputDecoration("Digite seu nome completo"),
-        ),
+        TextField(decoration: _inputDecoration("Digite seu nome completo")),
         const SizedBox(height: 20),
         _buildLabel("CPF"),
         TextField(
@@ -82,7 +80,11 @@ class _TelaCriarContaState extends State<TelaCriarConta> {
           keyboardType: TextInputType.datetime,
           decoration: _inputDecoration(
             "dd / mm / aaaa",
-            suffixIcon: const Icon(Icons.calendar_today, color: Colors.black54, size: 20),
+            suffixIcon: const Icon(
+              Icons.calendar_today,
+              color: Colors.black54,
+              size: 20,
+            ),
           ),
         ),
         const SizedBox(height: 20),
@@ -94,15 +96,22 @@ class _TelaCriarContaState extends State<TelaCriarConta> {
                 children: [
                   _buildLabel("Sexo"),
                   DropdownButtonFormField<String>(
+                    isExpanded: true,
                     decoration: _inputDecoration("Selecione").copyWith(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                     ),
                     value: _sexoSelecionado,
-                    icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down,
+                      color: Colors.black54,
+                    ),
                     items: _opcoesSexo.map((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
-                        child: Text(value),
+                        child: Text(value, overflow: TextOverflow.ellipsis),
                       );
                     }).toList(),
                     onChanged: (newValue) {
@@ -121,15 +130,22 @@ class _TelaCriarContaState extends State<TelaCriarConta> {
                 children: [
                   _buildLabel("Estado Civil"),
                   DropdownButtonFormField<String>(
+                    isExpanded: true,
                     decoration: _inputDecoration("Selecione").copyWith(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                     ),
                     value: _estadoCivilSelecionado,
-                    icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down,
+                      color: Colors.black54,
+                    ),
                     items: _opcoesEstadoCivil.map((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
-                        child: Text(value),
+                        child: Text(value, overflow: TextOverflow.ellipsis),
                       );
                     }).toList(),
                     onChanged: (newValue) {
@@ -252,35 +268,16 @@ class _TelaCriarContaState extends State<TelaCriarConta> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE2E2E2),
       body: Center(
         child: SingleChildScrollView(
           child: Container(
-            width: 380,
+            constraints: const BoxConstraints(maxWidth: 400),
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 15,
-                  offset: Offset(0, 5),
-                ),
-              ],
-            ),
+
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Center(
-                  child: Image.asset(
-                    'lib/App/img/logo.png',
-                    height: 150,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-                const SizedBox(height: 32),
                 const Text(
                   "Criar Conta",
                   textAlign: TextAlign.center,
