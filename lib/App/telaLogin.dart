@@ -2,14 +2,19 @@ import 'package:flutter/material.dart';
 import 'telaCadastro.dart';
 import 'package:flutter/services.dart';
 import 'formatters.dart';
+import 'telaInicial.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'api_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then((
-    _,
-  ) {
+  if (!kIsWeb) {
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then((_) {
+      runApp(const MyApp());
+    });
+  } else {
     runApp(const MyApp());
-  });
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -38,6 +43,9 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   bool _obscurePassword = true;
+  bool _isLoading = false;
+  final TextEditingController _cpfController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -95,6 +103,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 const SizedBox(height: 8),
                 TextField(
+                  controller: _cpfController,
                   keyboardType: TextInputType.number,
                   inputFormatters: [CpfInputFormatter()],
                   decoration: InputDecoration(
@@ -131,6 +140,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 const SizedBox(height: 8),
                 TextField(
+                  controller: _passwordController,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     hintText: 'Digite sua senha',
@@ -153,21 +163,24 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                     filled: true,
                     fillColor: const Color(0xFFFAFAFA),
-                    suffixIcon: TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                      ),
-                      child: Text(
-                        _obscurePassword ? "Mostrar" : "Ocultar",
-                        style: const TextStyle(
-                          color: Color(0xFF56D4A8),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                    suffixIcon: SizedBox(
+                      width: 80,
+                      child: TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Text(
+                          _obscurePassword ? "Mostrar" : "Ocultar",
+                          style: const TextStyle(
+                            color: Color(0xFF56D4A8),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                     ),
@@ -175,7 +188,52 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: _isLoading
+                      ? null
+                      : () async {
+                          if (_cpfController.text.isEmpty || _passwordController.text.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Preencha o CPF e a senha'), backgroundColor: Colors.red),
+                            );
+                            return;
+                          }
+
+                          setState(() {
+                            _isLoading = true;
+                          });
+
+                          // No banco, o CPF pode estar salvo com ou sem formatação. 
+                          // Vamos tentar mandar do mesmo jeito que formatamos no cadastro.
+                          // Se o Laravel espera apenas números, enviamos apenas números:
+                          String rawCpf = _cpfController.text.replaceAll(RegExp(r'[^0-9]'), '');
+                          
+                          final response = await ApiService.loginUser(rawCpf, _passwordController.text);
+
+                          if (!mounted) return;
+
+                          setState(() {
+                            _isLoading = false;
+                          });
+
+                          if (response['success']) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const TelaInicial(),
+                              ),
+                            );
+                          } else {
+                            String errMsg = '';
+                            if (response['errors'] != null) {
+                              errMsg = (response['errors'] as Map).values.map((v) => v[0]).join('\n');
+                            } else {
+                              errMsg = response['message'] ?? 'Erro desconhecido';
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(errMsg), backgroundColor: Colors.red),
+                            );
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6CE0B7), // Mint green
                     foregroundColor: Colors.white,
@@ -185,10 +243,19 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    "Entrar",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          "Entrar",
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
                 ),
                 const SizedBox(height: 24),
                 GestureDetector(

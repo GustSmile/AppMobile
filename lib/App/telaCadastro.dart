@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'formatters.dart';
+import 'api_service.dart';
 
 class TelaCadastro extends StatefulWidget {
   const TelaCadastro({super.key});
@@ -10,6 +11,7 @@ class TelaCadastro extends StatefulWidget {
 
 class _TelaCadastroState extends State<TelaCadastro> {
   int _etapa = 1;
+  bool _isLoading = false;
   bool _obscureSenha = true;
   bool _obscureConfirmarSenha = true;
 
@@ -292,8 +294,15 @@ class _TelaCadastroState extends State<TelaCadastro> {
             keyboardType: TextInputType.emailAddress,
             decoration: _inputDecoration("seu@email.com"),
             validator: (value) {
-              if (value == null || value.isEmpty) return 'Campo obrigatório';
-              if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) return 'E-mail inválido';
+              if (value == null || value.isEmpty) {
+                return 'Campo obrigatório';
+              }
+              if (value.contains(' ')) {
+                return 'O e-mail não pode conter espaços';
+              }
+              if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                return 'E-mail inválido';
+              }
               return null;
             },
           ),
@@ -317,21 +326,24 @@ class _TelaCadastroState extends State<TelaCadastro> {
             obscureText: _obscureSenha,
             decoration: _inputDecoration(
               "Crie uma senha",
-              suffixIcon: TextButton(
-                onPressed: () {
-                  setState(() {
-                    _obscureSenha = !_obscureSenha;
-                  });
-                },
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                ),
-                child: Text(
-                  _obscureSenha ? "Mostrar" : "Ocultar",
-                  style: const TextStyle(
-                    color: Color(0xFF56D4A8),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+              suffixIcon: SizedBox(
+                width: 80,
+                child: TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _obscureSenha = !_obscureSenha;
+                    });
+                  },
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: Text(
+                    _obscureSenha ? "Mostrar" : "Ocultar",
+                    style: const TextStyle(
+                      color: Color(0xFF56D4A8),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ),
@@ -339,7 +351,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
             validator: (value) {
               if (value == null || value.isEmpty) return 'Campo obrigatório';
               if (value.contains(' ')) return 'A senha não pode conter espaços';
-              if (value.length < 6) return 'A senha deve ter no mínimo 6 caracteres';
+              if (value.length < 8) return 'A senha deve ter no mínimo 8 caracteres';
               return null;
             },
           ),
@@ -350,21 +362,24 @@ class _TelaCadastroState extends State<TelaCadastro> {
             obscureText: _obscureConfirmarSenha,
             decoration: _inputDecoration(
               "Confirme sua senha",
-              suffixIcon: TextButton(
-                onPressed: () {
-                  setState(() {
-                    _obscureConfirmarSenha = !_obscureConfirmarSenha;
-                  });
-                },
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                ),
-                child: Text(
-                  _obscureConfirmarSenha ? "Mostrar" : "Ocultar",
-                  style: const TextStyle(
-                    color: Color(0xFF56D4A8),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+              suffixIcon: SizedBox(
+                width: 80,
+                child: TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _obscureConfirmarSenha = !_obscureConfirmarSenha;
+                    });
+                  },
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: Text(
+                    _obscureConfirmarSenha ? "Mostrar" : "Ocultar",
+                    style: const TextStyle(
+                      color: Color(0xFF56D4A8),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ),
@@ -406,17 +421,69 @@ class _TelaCadastroState extends State<TelaCadastro> {
               Expanded(
                 flex: 1,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (_formKeyStep2.currentState!.validate()) {
-                      // Lógica para finalizar o cadastro
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Cadastro finalizado com sucesso!')),
-                      );
-                      if (Navigator.canPop(context)) {
-                        Navigator.pop(context);
-                      }
-                    }
-                  },
+                  onPressed: _isLoading
+                      ? null
+                      : () async {
+                          if (_formKeyStep2.currentState!.validate()) {
+                            setState(() {
+                              _isLoading = true;
+                            });
+
+                            // Formatar data: de DD/MM/AAAA para YYYY-MM-DD
+                            final dataPartes = _dataNascimentoController.text.split('/');
+                            final dataFormatada = '${dataPartes[2]}-${dataPartes[1]}-${dataPartes[0]}';
+
+                            // Pegar ID do estado civil baseado no index
+                            int maritalId = _opcoesEstadoCivil.indexOf(_estadoCivilSelecionado!) + 1;
+
+                            // Pegar o char do Sexo
+                            String sexChar = _sexoSelecionado == 'Masculino' ? 'M' : 'F';
+
+                            final dados = {
+                              'cpf': _cpfController.text.replaceAll(RegExp(r'[^0-9]'), ''), 
+                              'name': _nomeController.text,
+                              'birthday': dataFormatada,
+                              'sex': sexChar,
+                              'phone': _telefoneController.text.replaceAll(RegExp(r'[^0-9]'), ''),
+                              'email': _emailController.text,
+                              'is_counselor': false,
+                              'picture': 'default',
+                              'document': '000000',
+                              'password': _senhaController.text,
+                              'marital_status_id': maritalId,
+                            };
+
+                            final response = await ApiService.registerUser(dados);
+
+                            if (!mounted) return;
+
+                            setState(() {
+                              _isLoading = false;
+                            });
+
+                            if (response['success']) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Cadastro finalizado com sucesso!')),
+                              );
+                              if (Navigator.canPop(context)) {
+                                Navigator.pop(context);
+                              }
+                            } else {
+                              String errMsg = '';
+                              if (response['errors'] != null) {
+                                errMsg = (response['errors'] as Map).values.map((v) => v[0]).join('\n');
+                              } else {
+                                errMsg = response['message'] ?? 'Erro desconhecido';
+                              }
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(errMsg),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6CE0B7),
                     foregroundColor: Colors.white,
@@ -426,10 +493,19 @@ class _TelaCadastroState extends State<TelaCadastro> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    "Finalizar Cadastro",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          "Finalizar Cadastro",
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
                 ),
               ),
             ],
