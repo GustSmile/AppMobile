@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'telaCadastro.dart';
 import 'package:flutter/services.dart';
+import 'formatters.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -94,6 +95,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 const SizedBox(height: 8),
                 TextField(
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [CpfInputFormatter()],
                   decoration: InputDecoration(
                     hintText: '000.000.000-00',
                     hintStyle: const TextStyle(color: Colors.black38),
