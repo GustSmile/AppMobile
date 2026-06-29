@@ -109,6 +109,31 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> getEvents() async {
+    final token = await getToken();
+    if (token == null) return {'success': false, 'message': 'Token não encontrado'};
+
+    final url = Uri.parse('$baseUrl/events');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': jsonDecode(response.body)};
+      } else {
+        return {'success': false, 'message': 'Não foi possível carregar os eventos'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Erro de conexão: $e'};
+    }
+  }
+
   static Future<void> logout() async {
     final token = await getToken();
     if (token != null) {

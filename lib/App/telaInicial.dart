@@ -164,23 +164,160 @@ class _TelaInicialState extends State<TelaInicial> {
   // --- Telas temporárias vazias (Placeholders) ---
 
   Widget _telaEventos() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(Icons.event_available, size: 80, color: Colors.black26),
-          SizedBox(height: 16),
-          Text(
-            'Eventos e Acampamentos',
-            style: TextStyle(fontSize: 22, color: Colors.black54, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Nenhum evento disponível no momento.',
-            style: TextStyle(color: Colors.black38),
-          ),
-        ],
-      ),
+    return FutureBuilder<Map<String, dynamic>>(
+      future: ApiService.getEvents(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF6CE0B7)),
+          );
+        }
+
+        if (snapshot.hasError || !snapshot.hasData || !snapshot.data!['success']) {
+          return const Center(child: Text('Erro ao carregar eventos.'));
+        }
+
+        // O Laravel envelopa dados paginados dentro de um campo "data"
+        final body = snapshot.data!['data'];
+        final eventsData = (body['data'] ?? body) as List;
+
+        if (eventsData.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(Icons.event_available, size: 80, color: Colors.black26),
+                SizedBox(height: 16),
+                Text(
+                  'Eventos e Acampamentos',
+                  style: TextStyle(fontSize: 22, color: Colors.black54, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Nenhum evento disponível no momento.',
+                  style: TextStyle(color: Colors.black38),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: eventsData.length,
+          itemBuilder: (context, index) {
+            final event = eventsData[index];
+            final imageUrl = event['image'];
+            
+            return Card(
+              margin: const EdgeInsets.only(bottom: 24),
+              elevation: 3,
+              shadowColor: Colors.black26,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Capa do Evento
+                  if (imageUrl != null && imageUrl.toString().startsWith('http'))
+                    Image.network(
+                      imageUrl,
+                      height: 180,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        height: 180,
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                      ),
+                    )
+                  else
+                    Container(
+                      height: 180,
+                      color: const Color(0xFF6CE0B7),
+                      child: const Center(
+                        child: Icon(Icons.event, size: 80, color: Colors.white),
+                      ),
+                    ),
+                  
+                  // Informações do Card
+                  Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          event['name'] ?? 'Evento sem nome',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            const Icon(Icons.location_on, size: 18, color: Colors.grey),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                event['place'] ?? 'Local não informado',
+                                style: const TextStyle(color: Colors.black54, fontSize: 16),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (event['start_date'] != null) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Builder(
+                                  builder: (context) {
+                                    final dateParts = event['start_date'].toString().split('T')[0].split('-');
+                                    final brDate = dateParts.length == 3 ? '${dateParts[2]}/${dateParts[1]}/${dateParts[0]}' : event['start_date'].toString();
+                                    return Text(
+                                      brDate,
+                                      style: const TextStyle(color: Colors.black54, fontSize: 16),
+                                    );
+                                  }
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              // TODO: Navegar para tela de detalhes do evento
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF6CE0B7),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: const Text(
+                              'Inscrever-se',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
